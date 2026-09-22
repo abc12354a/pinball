@@ -1,0 +1,137 @@
+.cp-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 6, 20, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 110;
+}
+
+.cp-card {
+  width: 620px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 36px 32px;
+  border-radius: 28px;
+  background: linear-gradient(160deg, #2b1c4d, #1d1333);
+  border: 1px solid rgba(126, 203, 255, 0.25);
+}
+
+.cp-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: #ffd76e;
+  text-align: center;
+}
+
+.cp-summary {
+  margin-top: 24px;
+  display: flex;
+}
+
+.cp-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .cp-num {
+    font-size: 34px;
+    font-weight: 700;
+    color: #7ecbff;
+  }
+  .cp-label {
+    margin-top: 4px;
+    font-size: 20px;
+    color: #8a7fa3;
+  }
+}
+
+.cp-list {
+  margin-top: 24px;
+}
+
+.cp-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  margin-top: 10px;
+
+  &.none {
+    opacity: 0.4;
+  }
+  &.r-SSR .cp-cardchip {
+    box-shadow: 0 0 10px rgba(255, 107, 129, 0.7);
+  }
+  &.r-SR .cp-cardchip {
+    box-shadow: 0 0 8px rgba(255, 215, 110, 0.6);
+  }
+}
+
+.cp-cardchip {
+  width: 120px;
+  height: 52px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4a3a6a, #33255a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+}
+
+.cp-rarity {
+  margin-left: 16px;
+  width: 70px;
+  font-size: 22px;
+  color: #ffd76e;
+}
+
+.cp-detail {
+  flex: 1;
+  font-size: 24px;
+  color: #cfc3e8;
+}
+
+.cp-count {
+  font-size: 28px;
+  font-weight: 700;
+  color: #7ecbff;
+}
+
+.cp-actions {
+  margin-top: 28px;
+  display: flex;
+  gap: 16px;
+}
+
+.cp-btn {
+  flex: 1;
+  height: 76px;
+  border-radius: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #e8ddfa;
+  background: rgba(126, 203, 255, 0.12);
+  border: 1px solid rgba(126, 203, 255, 0.3);
+
+  &.danger {
+    background: rgba(255, 77, 94, 0.15);
+    border-color: rgba(255, 77, 94, 0.4);
+  }
+  &.disabled {
+    opacity: 0.45;
+  }
+}
+
+.cp-close {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 26px;
+  color: #8a7fa3;
+}

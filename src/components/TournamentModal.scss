@@ -1,0 +1,166 @@
+.tm-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 6, 20, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.tm-card {
+  width: 560px;
+  padding: 40px 36px;
+  border-radius: 28px;
+  background: linear-gradient(160deg, #2b1c4d, #1d1333);
+  border: 1px solid rgba(255, 215, 110, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tm-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: #ffd76e;
+
+  &.sm {
+    font-size: 30px;
+  }
+}
+
+.tm-desc {
+  margin-top: 20px;
+  font-size: 26px;
+  color: #cfc3e8;
+  text-align: center;
+
+  &.sm {
+    margin-top: 12px;
+    font-size: 24px;
+  }
+}
+
+.tm-countdown {
+  margin-top: 16px;
+  font-size: 40px;
+  font-weight: 700;
+  color: #7ecbff;
+}
+
+.tm-btn {
+  margin-top: 28px;
+  width: 100%;
+  height: 84px;
+  border-radius: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  color: #e8ddfa;
+  background: rgba(126, 203, 255, 0.12);
+  border: 1px solid rgba(126, 203, 255, 0.3);
+
+  &.primary {
+    background: linear-gradient(135deg, #ff6b81, #ff4d5e);
+    border-color: transparent;
+    color: #fff;
+    font-weight: 700;
+  }
+}
+
+.tm-skip {
+  margin-top: 16px;
+  font-size: 22px;
+  color: #8a7fa3;
+}
+
+.tm-result-text {
+  margin-top: 20px;
+  font-size: 32px;
+  font-weight: 700;
+  color: #7ecbff;
+}
+
+// 进行中：底部面板（不遮钉板，决斗要看球）
+.tm-sheet {
+  position: fixed;
+  left: 24px;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100;
+  padding: 24px 28px;
+  border-radius: 24px;
+  background: rgba(29, 19, 51, 0.94);
+  border: 1px solid rgba(126, 203, 255, 0.2);
+
+  &.duel {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 420px;
+    bottom: 30px;
+  }
+}
+
+.tm-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tm-score-num {
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffd76e;
+}
+
+.tm-tapzone {
+  margin-top: 20px;
+  height: 180px;
+  border-radius: 24px;
+  background: radial-gradient(circle at 50% 40%, rgba(255, 107, 129, 0.55), rgba(255, 77, 94, 0.25));
+  border: 2px dashed rgba(255, 220, 220, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.tm-board {
+  margin-top: 20px;
+  width: 100%;
+}
+
+.tm-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 8px;
+  border-radius: 12px;
+
+  &.me {
+    background: rgba(255, 215, 110, 0.12);
+  }
+}
+
+.tm-rank {
+  width: 56px;
+  font-size: 26px;
+  color: #8a7fa3;
+  text-align: center;
+}
+
+.tm-name {
+  flex: 1;
+  font-size: 26px;
+  color: #e8ddfa;
+}
+
+.tm-score {
+  width: 100px;
+  font-size: 26px;
+  font-weight: 700;
+  color: #7ecbff;
+  text-align: right;
+}
