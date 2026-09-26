@@ -23,6 +23,10 @@ export class Renderer {
   /** 倍数锁定余韵（秒）：ROLL_MULT 结束瞬间触发弹跳/粒子/亮灯爆发 */
   private multLockFlash = 0
   private lastDrawnPhase: Phase | '' = ''
+  /** 出珠计数器：中奖额 + 已数到值 + 剩余展示时长（秒） */
+  private payoutTotal = 0
+  private payoutShown = 0
+  private payoutTimer = 0
   /** 蓄力进度 [0,1]，引擎写入 */
   chargePower = 0
   /** 母球皮肤设置 */
@@ -91,7 +95,7 @@ export class Renderer {
     out.y = this.feederPathY[this.feederPathY.length - 1]
   }
 
-  /** 中奖特效：轨道爆闪 + 喷珠瀑布 + 冲天光柱 + 全屏礼花 */
+  /** 中奖特效：轨道爆闪 + 鱼贯喷珠瀑布 + 出珠计数器 + 冲天光柱 + 全屏礼花 */
   celebrate(lane: number, winBalls = 0): void {
     this.winFlash = 1.0
     this.winLane = lane
@@ -99,12 +103,17 @@ export class Renderer {
     const cx = this.layout.lanes.left + this.layout.lanes.width * (lane + 0.5)
     this.particles.burst(cx, this.layout.lanes.landY - 6, 36)
     this.particles.confetti(this.layout.width, winBalls > 50 ? 50 : 25)
+    // 喷珠数量与中奖额挂钩（8~30 颗鱼贯喷出）
     this.payoutHopper.spawnFromLane(
       cx,
       this.layout.lanes.landY,
-      Math.min(24, Math.max(8, Math.floor(winBalls / 2)))
+      Math.min(30, Math.max(8, Math.ceil(winBalls / 3)))
     )
-    const text = winBalls > 80 ? `CRITICAL! +${winBalls} 珠` : winBalls > 0 ? `+${winBalls} 珠` : '中奖!'
+    // 出珠计数器：+N 珠随喷流递增（1.2s 数完，共展示 2.2s）
+    this.payoutTotal = winBalls
+    this.payoutShown = 0
+    this.payoutTimer = 2.2
+    const text = winBalls > 80 ? `CRITICAL!` : winBalls > 0 ? `+${winBalls} 珠` : '中奖!'
     this.floatingTexts.spawn(text, cx, this.layout.lanes.landY - 24, '#ffd76e', 24)
   }
 
@@ -146,6 +155,11 @@ export class Renderer {
     this.payoutHopper.step(dtSec, this.layout.height * 0.975)
     if (this.winFlash > 0) this.winFlash -= dtSec
     if (this.multLockFlash > 0) this.multLockFlash -= dtSec
+    if (this.payoutTimer > 0) {
+      this.payoutTimer -= dtSec
+      const counting = Math.max(0, Math.min(1, (2.2 - this.payoutTimer) / 1.2))
+      this.payoutShown = Math.round(this.payoutTotal * counting)
+    }
 
     // 推进投料滑轨小球（单程 0.9s，easeInOut 由绘制端处理）
     for (let i = 0; i < this.feederPool.length; i++) {
@@ -229,6 +243,7 @@ export class Renderer {
     this.payoutHopper.draw(ctx)
     this.particles.draw(ctx)
     this.floatingTexts.draw(ctx)
+    this.drawPayoutCounter()
     if (charging) this.drawPowerBar()
 
     ctx.restore()
@@ -439,6 +454,24 @@ export class Renderer {
     ctx.font = `bold ${Math.round(ph * 0.16)}px sans-serif`
     ctx.fillStyle = 'rgba(207, 195, 232, 0.8)'
     ctx.fillText(rolling ? '倍数滚动中' : 'MULTIPLIER', 0, ph * 0.32)
+    ctx.restore()
+  }
+
+  /** 出珠计数器：棋盘上方居中大号 "+N 珠"，随喷流递增，末段淡出 */
+  private drawPayoutCounter(): void {
+    if (this.payoutTimer <= 0 || this.payoutTotal <= 0) return
+    const ctx = this.ctx
+    const L = this.layout
+    const alpha = Math.min(1, this.payoutTimer / 0.4)
+    ctx.save()
+    ctx.globalAlpha = alpha
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.font = `bold ${Math.round(L.height * 0.062)}px sans-serif`
+    ctx.fillStyle = '#ffd76e'
+    ctx.shadowColor = 'rgba(255, 180, 0, 0.9)'
+    ctx.shadowBlur = 16
+    ctx.fillText(`+${this.payoutShown} 珠`, L.width / 2, L.height * 0.14)
     ctx.restore()
   }
 

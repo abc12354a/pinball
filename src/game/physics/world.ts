@@ -76,12 +76,12 @@ export class PlinkoWorld {
   /** 固定步长推进（1/120s），dt 单位秒 */
   step(dt: number): void {
     if (this.state === 'sinking') {
-      // 沉入口袋：横向缓动至轨道中心，匀速下沉，到底才触发落道
+      // 沉入口袋：速度指数缓降（入口 ~400px/s → 90，无急刹），横速衰减 + 缓动居中
       const tx = laneCenterX(this.layout, this.sinkLane)
+      this.bvy += (SINK_SPEED - this.bvy) * Math.min(1, 8 * dt)
+      this.by += this.bvy * dt
+      this.bvx *= Math.max(0, 1 - 8 * dt)
       this.bx += (tx - this.bx) * Math.min(1, 10 * dt)
-      this.by += SINK_SPEED * dt
-      this.bvx = 0
-      this.bvy = SINK_SPEED // 供渲染层形变
       this.decayFlash(dt)
       if (this.by >= this.sinkTargetY) {
         this.by = this.sinkTargetY
@@ -126,20 +126,14 @@ export class PlinkoWorld {
     this.trailY[idx] = this.by
     this.trailLen++
 
-    // 落道传感器：转入沉入口袋动画（LANDED 延后 ~0.33s 到沉底才派发）
+    // 落道传感器：转入沉入口袋动画。位置/速度全程连续（不瞬移不急刹），
+    // LANDED 延后到沉底才派发；结果轨道引导模式恒为 targetLane
     if (this.by >= L.lanes.landY) {
-      let lane = laneIndexOf(L, this.bx)
-      if (this.targetLane >= 0 && lane !== this.targetLane) {
-        // 引导未完全收敛：钳到目标轨道（等价撞分道壁滑入）
-        lane = this.targetLane
-        this.bx = laneCenterX(L, lane)
-      }
+      const lane = this.targetLane >= 0 ? this.targetLane : laneIndexOf(L, this.bx)
       this.landedLane = lane
       this.sinkLane = lane
       this.sinkTargetY = L.lanes.landY + SINK_DEPTH
       this.state = 'sinking'
-      this.bvy = SINK_SPEED
-      this.bvx = 0
       this.trailLen = 0
       this.decayFlash(dt)
       return

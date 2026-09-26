@@ -36,6 +36,31 @@ describe('PlinkoWorld 物理', () => {
     }
   })
 
+  it('沉入过渡无瞬移：过传感器线时位置/速度连续', () => {
+    const world = new PlinkoWorld(layout)
+    world.setTargetLane(3)
+    world.launch(0.6)
+    let prevBx = world.bx
+    let prevBvy = world.bvy
+    let crossed = false
+    let s = 0
+    while ((world.state === 'flying' || world.state === 'sinking') && s < 3000) {
+      world.step(1 / 120)
+      if (world.state === 'sinking' && !crossed) {
+        crossed = true
+        // 进入沉入的那一步：单步横向位移小量（无瞬移）、竖速仅小幅缓降（无急刹）
+        expect(Math.abs(world.bx - prevBx)).toBeLessThan(4)
+        expect(prevBvy - world.bvy).toBeLessThan(Math.max(20, prevBvy * 0.2))
+      }
+      prevBx = world.bx
+      prevBvy = world.bvy
+      s++
+    }
+    expect(crossed).toBe(true)
+    expect(world.state).toBe('landed')
+    expect(world.landedLane).toBe(3)
+  })
+
   it('落道经过沉入口袋：先 sinking 再 landed，轨道不变', () => {
     const world = new PlinkoWorld(layout)
     let sawSinking = false

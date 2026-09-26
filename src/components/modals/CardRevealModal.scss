@@ -1,3 +1,4 @@
+// 注意：项目 designWidth=750（pxtransform px→rpx），全部数值使用 750 规范（约为视觉稿 2 倍）
 .card-reveal-modal {
   position: fixed;
   inset: 0;
@@ -18,7 +19,7 @@
     position: relative;
     z-index: 2;
     width: 90%;
-    max-width: 360px;
+    max-width: 700px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -27,19 +28,19 @@
 
   .crm-header {
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: 48px;
 
     .crm-title {
       display: block;
-      font-size: 20px;
+      font-size: 40px;
       font-weight: 900;
       color: #ffd76e;
       text-shadow: 0 0 12px rgba(255, 215, 110, 0.6);
-      margin-bottom: 6px;
+      margin-bottom: 12px;
     }
 
     .crm-sub {
-      font-size: 13px;
+      font-size: 26px;
       color: rgba(255, 255, 255, 0.65);
     }
   }
@@ -50,10 +51,10 @@
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    gap: 16px;
+    gap: 20px;
     width: 100%;
     perspective: 1000px;
-    margin-bottom: 28px;
+    margin-bottom: 56px;
     transition: transform 0.4s ease;
 
     &.pack-closed {
@@ -68,8 +69,8 @@
   }
 
   .card-3d-wrapper {
-    width: 120px;
-    height: 170px;
+    width: 210px;
+    height: 300px;
     perspective: 1000px;
     cursor: pointer;
 
@@ -91,15 +92,15 @@
       width: 100%;
       height: 100%;
       backface-visibility: hidden;
-      border-radius: 12px;
+      border-radius: 24px;
       overflow: hidden;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
     }
 
     // 卡背
     .card-back {
       background: linear-gradient(135deg, #1f1435, #2d184d 50%, #150d26);
-      border: 2px solid rgba(255, 215, 110, 0.4);
+      border: 3px solid rgba(255, 215, 110, 0.4);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -108,28 +109,28 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 6px;
-        padding: 12px;
-        border: 1px dashed rgba(255, 215, 110, 0.3);
-        border-radius: 8px;
+        gap: 12px;
+        padding: 24px;
+        border: 2px dashed rgba(255, 215, 110, 0.3);
+        border-radius: 16px;
         background: rgba(0, 0, 0, 0.25);
 
         .back-gem {
-          font-size: 28px;
+          font-size: 56px;
           animation: floatGem 1.6s infinite ease-in-out alternate;
         }
 
         .back-text {
-          font-size: 11px;
+          font-size: 22px;
           font-weight: 900;
           color: #ffd76e;
-          letter-spacing: 2px;
+          letter-spacing: 4px;
         }
 
         .back-sub {
-          font-size: 9px;
+          font-size: 18px;
           color: rgba(255, 255, 255, 0.4);
-          letter-spacing: 1px;
+          letter-spacing: 2px;
         }
       }
     }
@@ -141,16 +142,16 @@
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 8px;
+      padding: 24px 16px;
       position: relative;
       background: #1e1b2e;
-      border: 2px solid #5a5475;
+      border: 3px solid #5a5475;
 
       .card-badge {
         align-self: flex-start;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 10px;
+        padding: 4px 16px;
+        border-radius: 8px;
+        font-size: 20px;
         font-weight: 900;
       }
 
@@ -158,13 +159,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 56px;
-        height: 56px;
+        width: 112px;
+        height: 112px;
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.08);
 
         .art-emoji {
-          font-size: 32px;
+          font-size: 64px;
         }
       }
 
@@ -172,16 +173,16 @@
         text-align: center;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 4px;
 
         .card-name {
-          font-size: 13px;
+          font-size: 26px;
           font-weight: 800;
           color: #fff;
         }
 
         .card-desc {
-          font-size: 10px;
+          font-size: 20px;
           color: rgba(255, 255, 255, 0.7);
         }
       }
@@ -253,9 +254,9 @@
     width: 100%;
 
     .crm-btn {
-      padding: 12px 36px;
-      border-radius: 28px;
-      font-size: 15px;
+      padding: 24px 72px;
+      border-radius: 56px;
+      font-size: 30px;
       font-weight: 800;
       cursor: pointer;
       text-align: center;
@@ -264,7 +265,7 @@
       &.crm-btn-primary {
         background: linear-gradient(135deg, #ffd76e, #ff9f43);
         color: #1f1105;
-        box-shadow: 0 4px 16px rgba(255, 180, 0, 0.45);
+        box-shadow: 0 8px 32px rgba(255, 180, 0, 0.45);
 
         &:active {
           transform: scale(0.96);
@@ -274,7 +275,7 @@
       &.crm-btn-secondary {
         background: rgba(255, 255, 255, 0.12);
         color: #ffffff;
-        border: 1px solid rgba(255, 255, 255, 0.25);
+        border: 2px solid rgba(255, 255, 255, 0.25);
 
         &:active {
           background: rgba(255, 255, 255, 0.2);
@@ -296,7 +297,7 @@
 
 @keyframes floatGem {
   from { transform: translateY(0); }
-  to { transform: translateY(-4px); }
+  to { transform: translateY(-8px); }
 }
 
 @keyframes holoMove {

@@ -254,14 +254,16 @@ interface HopperBall {
   x: number; y: number
   vx: number; vy: number
   life: number
+  /** 出场延迟（秒）：鱼贯喷出的排队间隔 */
+  delay: number
 }
 
 export class PayoutHopper {
   private balls: HopperBall[] = []
 
   constructor() {
-    for (let i = 0; i < 40; i++) {
-      this.balls.push({ active: false, x: 0, y: 0, vx: 0, vy: 0, life: 0 })
+    for (let i = 0; i < 64; i++) {
+      this.balls.push({ active: false, x: 0, y: 0, vx: 0, vy: 0, life: 0, delay: 0 })
     }
   }
 
@@ -273,9 +275,10 @@ export class PayoutHopper {
       b.active = true
       b.x = startX + (Math.random() - 0.5) * 14
       b.y = startY
-      b.vx = (Math.random() - 0.5) * 80
-      b.vy = 40 + Math.random() * 80
-      b.life = 0.7 + Math.random() * 0.3
+      b.vx = (Math.random() - 0.5) * 110 - 25 // 微右向：滚向右下出珠口
+      b.vy = -(60 + Math.random() * 70) // 小上抛，从口袋"蹦"出
+      b.life = 1.5 + Math.random() * 0.9
+      b.delay = spawned * 0.045
       spawned++
     }
   }
@@ -284,27 +287,33 @@ export class PayoutHopper {
     for (let i = 0; i < this.balls.length; i++) {
       const b = this.balls[i]
       if (!b.active) continue
+      if (b.delay > 0) {
+        b.delay -= dt
+        continue
+      }
       b.vy += 800 * dt
       b.x += b.vx * dt
       b.y += b.vy * dt
       if (b.y >= floorY) {
         b.y = floorY
         b.vy = -b.vy * 0.35
+        b.vx *= 0.92 // 落地摩擦
       }
+      if (b.y >= floorY - 1) b.vx *= Math.max(0, 1 - 1.5 * dt) // 贴地滚动衰减
       b.life -= dt
       if (b.life <= 0) b.active = false
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D, radius = 6): void {
+  draw(ctx: CanvasRenderingContext2D, radius = 7): void {
     ctx.save()
     for (let i = 0; i < this.balls.length; i++) {
       const b = this.balls[i]
-      if (!b.active) continue
+      if (!b.active || b.delay > 0) continue
       const g = ctx.createRadialGradient(b.x - 2, b.y - 2, 1, b.x, b.y, radius)
       g.addColorStop(0, '#ffffff')
-      g.addColorStop(0.5, '#d0e8ff')
-      g.addColorStop(1, '#7ecbff')
+      g.addColorStop(0.5, '#ffd76e')
+      g.addColorStop(1, '#ff9f43')
       ctx.fillStyle = g
       ctx.beginPath()
       ctx.arc(b.x, b.y, radius, 0, Math.PI * 2)
