@@ -15,13 +15,19 @@ export function loadPlayer(): PlayerState {
   try {
     const raw = Taro.getStorageSync(KEY)
     if (!raw) return createPlayer()
-    const data = JSON.parse(String(raw)) as Partial<PlayerState>
-    if (data.version !== 1) return createPlayer()
+    const data = (typeof raw === 'string' ? JSON.parse(raw) : raw) as Partial<PlayerState>
+    if (!data || data.version !== 1) return createPlayer()
     const fresh = createPlayer()
+    // 剔除已下线字段（V2 删除能量/开心30秒前的旧存档）
+    const { energyLamps: _l, energyProgress: _p, ...rest } = data as Record<string, unknown>
+    const merged = { ...fresh, ...rest } as PlayerState
     return {
-      ...fresh,
-      ...data,
+      ...merged,
       cards: { ...(data.cards ?? {}) },
+      unlockedSkins: data.unlockedSkins ?? fresh.unlockedSkins,
+      activeSkin: data.activeSkin ?? fresh.activeSkin,
+      dailyMissions: { ...fresh.dailyMissions, ...(data.dailyMissions ?? {}) },
+      achievements: { ...fresh.achievements, ...(data.achievements ?? {}) },
       stats: { ...fresh.stats, ...(data.stats ?? {}) }
     }
   } catch {

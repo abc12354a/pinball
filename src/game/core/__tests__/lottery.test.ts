@@ -100,8 +100,8 @@ describe('pickLane（W2 + 蓄力偏移 + 卡片模式增益）', () => {
     let base = 0
     let boosted = 0
     for (let i = 0; i < n; i++) {
-      if (isWin(pickLane(rng, { mult: 8, power: 0.5, mode: 'ball', happy: false }), 8)) base++
-      if (isWin(pickLane(rng, { mult: 8, power: 0.5, mode: 'card', happy: false }), 8)) boosted++
+      if (isWin(pickLane(rng, { mult: 8, power: 0.5, mode: 'ball' }), 8)) base++
+      if (isWin(pickLane(rng, { mult: 8, power: 0.5, mode: 'card' }), 8)) boosted++
     }
     const ratio = boosted / base
     expect(ratio).toBeGreaterThan(CONFIG.card.cardModeRateBoost - 0.25)
@@ -115,25 +115,14 @@ describe('pickLane（W2 + 蓄力偏移 + 卡片模式增益）', () => {
     let full = 0
     let weak = 0
     for (let i = 0; i < n; i++) {
-      const a = pickLane(rng, { mult: 2, power: 1, mode: 'ball', happy: false })
-      const b = pickLane(rng, { mult: 2, power: 0, mode: 'ball', happy: false })
+      const a = pickLane(rng, { mult: 2, power: 1, mode: 'ball' })
+      const b = pickLane(rng, { mult: 2, power: 0, mode: 'ball' })
       if (a >= centerStart && a <= centerEnd) full++
       if (b >= centerStart && b <= centerEnd) weak++
     }
     expect(full).toBeGreaterThan(weak) // 满力落中心段更多
     const delta = (full - weak) / n
     expect(delta).toBeLessThan(0.15) // 偏移幅度受 powerBiasMax 约束
-  })
-
-  it('开心30秒使用独立落道权重', () => {
-    const n = 100000
-    let edge = 0
-    for (let i = 0; i < n; i++) {
-      const lane = pickLane(rng, { mult: 2, power: 0.5, mode: 'ball', happy: true })
-      if (lane === 0 || lane === 11) edge++
-    }
-    // happyLaneWeights 边缘权重 5/84 高于 W2 的 4/108
-    expect(edge / n).toBeGreaterThan(0.05)
   })
 })
 

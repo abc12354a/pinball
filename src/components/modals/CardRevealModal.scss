@@ -1,0 +1,310 @@
+.card-reveal-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .crm-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 5, 16, 0.88);
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .crm-container {
+    position: relative;
+    z-index: 2;
+    width: 90%;
+    max-width: 360px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: scaleUp 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.25);
+  }
+
+  .crm-header {
+    text-align: center;
+    margin-bottom: 24px;
+
+    .crm-title {
+      display: block;
+      font-size: 20px;
+      font-weight: 900;
+      color: #ffd76e;
+      text-shadow: 0 0 12px rgba(255, 215, 110, 0.6);
+      margin-bottom: 6px;
+    }
+
+    .crm-sub {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.65);
+    }
+  }
+
+  // 3D 卡牌舞台
+  .cards-stage {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    perspective: 1000px;
+    margin-bottom: 28px;
+    transition: transform 0.4s ease;
+
+    &.pack-closed {
+      transform: scale(0.85);
+      opacity: 0;
+    }
+
+    &.pack-ready {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .card-3d-wrapper {
+    width: 120px;
+    height: 170px;
+    perspective: 1000px;
+    cursor: pointer;
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    &.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+    }
+
+    // 卡背
+    .card-back {
+      background: linear-gradient(135deg, #1f1435, #2d184d 50%, #150d26);
+      border: 2px solid rgba(255, 215, 110, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .back-emboss {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 12px;
+        border: 1px dashed rgba(255, 215, 110, 0.3);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.25);
+
+        .back-gem {
+          font-size: 28px;
+          animation: floatGem 1.6s infinite ease-in-out alternate;
+        }
+
+        .back-text {
+          font-size: 11px;
+          font-weight: 900;
+          color: #ffd76e;
+          letter-spacing: 2px;
+        }
+
+        .back-sub {
+          font-size: 9px;
+          color: rgba(255, 255, 255, 0.4);
+          letter-spacing: 1px;
+        }
+      }
+    }
+
+    // 卡面
+    .card-front {
+      transform: rotateY(180deg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 8px;
+      position: relative;
+      background: #1e1b2e;
+      border: 2px solid #5a5475;
+
+      .card-badge {
+        align-self: flex-start;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 900;
+      }
+
+      .card-art {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+
+        .art-emoji {
+          font-size: 32px;
+        }
+      }
+
+      .card-meta {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .card-name {
+          font-size: 13px;
+          font-weight: 800;
+          color: #fff;
+        }
+
+        .card-desc {
+          font-size: 10px;
+          color: rgba(255, 255, 255, 0.7);
+        }
+      }
+
+      // 品质样式
+      &.n {
+        border-color: #8b9bb4;
+        .card-badge {
+          background: #8b9bb4;
+          color: #101520;
+        }
+      }
+
+      &.r {
+        border-color: #3498db;
+        box-shadow: 0 0 16px rgba(52, 152, 219, 0.5);
+        .card-badge {
+          background: #3498db;
+          color: #fff;
+        }
+      }
+
+      &.sr {
+        border-color: #9b59b6;
+        box-shadow: 0 0 20px rgba(155, 89, 182, 0.7);
+        .card-badge {
+          background: linear-gradient(135deg, #9b59b6, #e056fd);
+          color: #fff;
+        }
+      }
+
+      &.ssr {
+        border-color: #f1c40f;
+        box-shadow: 0 0 28px rgba(241, 196, 15, 0.85);
+        animation: ssrPulse 1.8s infinite alternate;
+        .card-badge {
+          background: linear-gradient(135deg, #f39c12, #f1c40f);
+          color: #1a0f00;
+        }
+      }
+    }
+  }
+
+  // 全息覆膜流光
+  .holo-sheen {
+    position: absolute;
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      115deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.15) 30%,
+      rgba(255, 215, 110, 0.25) 45%,
+      rgba(255, 107, 129, 0.25) 55%,
+      rgba(126, 203, 255, 0.25) 65%,
+      transparent 80%
+    );
+    transform: rotate(-25deg);
+    animation: holoMove 3s infinite linear;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  // 按钮操作区
+  .crm-actions {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+
+    .crm-btn {
+      padding: 12px 36px;
+      border-radius: 28px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+
+      &.crm-btn-primary {
+        background: linear-gradient(135deg, #ffd76e, #ff9f43);
+        color: #1f1105;
+        box-shadow: 0 4px 16px rgba(255, 180, 0, 0.45);
+
+        &:active {
+          transform: scale(0.96);
+        }
+      }
+
+      &.crm-btn-secondary {
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+
+        &:active {
+          background: rgba(255, 255, 255, 0.2);
+        }
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes floatGem {
+  from { transform: translateY(0); }
+  to { transform: translateY(-4px); }
+}
+
+@keyframes holoMove {
+  0% { transform: translateY(-60%) rotate(-25deg); }
+  100% { transform: translateY(60%) rotate(-25deg); }
+}
+
+@keyframes ssrPulse {
+  0% { box-shadow: 0 0 16px rgba(241, 196, 15, 0.6); }
+  100% { box-shadow: 0 0 32px rgba(241, 196, 15, 1); }
+}

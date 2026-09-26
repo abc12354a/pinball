@@ -1,0 +1,73 @@
+@use './ModalCommon.scss';
+
+.supply-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.supply-box {
+  padding: 20px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(126, 203, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  &.highlight {
+    border-color: #ffd76e;
+    background: linear-gradient(135deg, rgba(255, 215, 110, 0.1), rgba(255, 107, 129, 0.05));
+  }
+
+  .sb-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .sb-icon {
+      font-size: 42px;
+    }
+
+    .sb-info {
+      display: flex;
+      flex-direction: column;
+
+      .sb-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #fff;
+      }
+
+      .sb-desc {
+        font-size: 20px;
+        color: #9d8db8;
+        margin-top: 4px;
+      }
+    }
+  }
+
+  .sb-btn {
+    padding: 12px 28px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #ffd76e, #ff9f43);
+    color: #160f21;
+    font-size: 24px;
+    font-weight: 800;
+
+    &.primary {
+      background: linear-gradient(135deg, #ff6b81, #ff4d5e);
+      color: #fff;
+    }
+
+    &.disabled {
+      opacity: 0.45;
+      background: rgba(255, 255, 255, 0.1);
+      color: #8a7fa3;
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+}

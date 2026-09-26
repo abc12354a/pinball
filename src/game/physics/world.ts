@@ -12,10 +12,13 @@ import { laneCenterX, laneIndexOf, type BoardLayout } from '../render/board'
  * 零分配设计：钉数据扁平数组、尾迹复用缓冲、无闭包捕获。
  */
 
-export type WorldState = 'idle' | 'flying' | 'landed'
+export type WorldState = 'idle' | 'flying' | 'sinking' | 'landed'
 
 const TRAIL_LEN = 10
 const MAX_SPEED = 1100
+/** 沉入口袋：下沉速度（px/s）与深度（越过传感器线后再下沉的像素） */
+const SINK_SPEED = 90
+export const SINK_DEPTH = 30
 
 export class PlinkoWorld {
   state: WorldState = 'idle'
@@ -32,7 +35,14 @@ export class PlinkoWorld {
   readonly pegFlash: Float32Array
   /** 落道回调 */
   onLanded: ((lane: number) => void) | null = null
+  /** 黄金钉碰撞回调 */
+  onBumperHit: ((index: number) => void) | null = null
+  /** 普通钉碰撞回调 (x, y, nx, ny, depthRatio, speed) */
+  onPegHit: ((x: number, y: number, nx: number, ny: number, depthRatio: number, speed: number) => void) | null = null
   landedLane = -1
+  /** 沉入中：目标轨道与口袋底 y */
+  sinkLane = -1
+  private sinkTargetY = 0
   /** 引导中的目标轨道，-1 = 无（自然模式） */
   private targetLane = -1
   private cfg = CONFIG.physics
@@ -65,6 +75,21 @@ export class PlinkoWorld {
 
   /** 固定步长推进（1/120s），dt 单位秒 */
   step(dt: number): void {
+    if (this.state === 'sinking') {
+      // 沉入口袋：横向缓动至轨道中心，匀速下沉，到底才触发落道
+      const tx = laneCenterX(this.layout, this.sinkLane)
+      this.bx += (tx - this.bx) * Math.min(1, 10 * dt)
+      this.by += SINK_SPEED * dt
+      this.bvx = 0
+      this.bvy = SINK_SPEED // 供渲染层形变
+      this.decayFlash(dt)
+      if (this.by >= this.sinkTargetY) {
+        this.by = this.sinkTargetY
+        this.state = 'landed'
+        if (this.onLanded) this.onLanded(this.sinkLane)
+      }
+      return
+    }
     if (this.state !== 'flying') {
       this.decayFlash(dt)
       return
@@ -84,7 +109,10 @@ export class PlinkoWorld {
     this.bvy += gravity * dt
     // 防静止：低速时随机扰动，打破钉顶平衡
     const sp2 = this.bvx * this.bvx + this.bvy * this.bvy
-    if (sp2 < 30 * 30) this.bvx += (Math.random() - 0.5) * 36
+    if (sp2 < 40 * 40) {
+      this.bvx += (Math.random() - 0.5) * 45
+      if (this.bvy < 20) this.bvy += 25
+    }
     this.clampSpeed()
     this.bx += this.bvx * dt
     this.by += this.bvy * dt
@@ -98,7 +126,7 @@ export class PlinkoWorld {
     this.trailY[idx] = this.by
     this.trailLen++
 
-    // 落道传感器
+    // 落道传感器：转入沉入口袋动画（LANDED 延后 ~0.33s 到沉底才派发）
     if (this.by >= L.lanes.landY) {
       let lane = laneIndexOf(L, this.bx)
       if (this.targetLane >= 0 && lane !== this.targetLane) {
@@ -107,8 +135,14 @@ export class PlinkoWorld {
         this.bx = laneCenterX(L, lane)
       }
       this.landedLane = lane
-      this.state = 'landed'
-      if (this.onLanded) this.onLanded(lane)
+      this.sinkLane = lane
+      this.sinkTargetY = L.lanes.landY + SINK_DEPTH
+      this.state = 'sinking'
+      this.bvy = SINK_SPEED
+      this.bvx = 0
+      this.trailLen = 0
+      this.decayFlash(dt)
+      return
     }
     this.decayFlash(dt)
   }
@@ -117,6 +151,8 @@ export class PlinkoWorld {
     this.state = 'idle'
     this.targetLane = -1
     this.landedLane = -1
+    this.sinkLane = -1
+    this.sinkTargetY = 0
     this.trailLen = 0
   }
 
@@ -141,7 +177,9 @@ export class PlinkoWorld {
       const dx = this.bx - px
       const dy = this.by - py
       const distSq = dx * dx + dy * dy
-      const rr = r + pr
+      const isBumper = this.layout.bumperIndices?.indexOf(i) >= 0
+      const actualPr = isBumper ? CONFIG.bumpers.radius : pr
+      const rr = r + actualPr
       if (distSq >= rr * rr || distSq === 0) continue
       const dist = Math.sqrt(distSq)
       const nx = dx / dist
@@ -151,24 +189,38 @@ export class PlinkoWorld {
       this.bx += nx * push
       this.by += ny * push
       // 速度反射（法向分量 × 恢复系数，切向加微扰）
+      const bounceRestitution = isBumper ? CONFIG.bumpers.restitution : e
       const vn = this.bvx * nx + this.bvy * ny
       if (vn < 0) {
         const jx = (Math.random() * 2 - 1) * jitter
         const jy = (Math.random() * 2 - 1) * jitter
-        this.bvx -= (1 + e) * vn * nx
-        this.bvy -= (1 + e) * vn * ny
+        this.bvx -= (1 + bounceRestitution) * vn * nx
+        this.bvy -= (1 + bounceRestitution) * vn * ny
         this.bvx += jx * Math.abs(vn)
         this.bvy += jy * Math.abs(vn)
         // 最小反弹速度：防球在钉顶静止平衡
         const vn2 = this.bvx * nx + this.bvy * ny
-        const MIN_BOUNCE = 55
+        const MIN_BOUNCE = isBumper ? 80 : 55
         if (vn2 < MIN_BOUNCE) {
           const add = MIN_BOUNCE - vn2
           this.bvx += nx * add
           this.bvy += ny * add
         }
       }
-      this.pegFlash[i] = 1
+      if (isBumper) {
+        if (this.pegFlash[i] < 0.2) this.onBumperHit?.(i)
+        this.pegFlash[i] = 1.6
+      } else {
+        if (this.pegFlash[i] < 0.15) {
+          const depthRatio = Math.max(
+            0,
+            Math.min(1, (py - this.layout.pegFieldTop) / (this.layout.pegFieldBottom - this.layout.pegFieldTop))
+          )
+          const speed = Math.sqrt(this.bvx * this.bvx + this.bvy * this.bvy)
+          this.onPegHit?.(this.bx, this.by, nx, ny, depthRatio, speed)
+        }
+        this.pegFlash[i] = 1
+      }
     }
   }
 

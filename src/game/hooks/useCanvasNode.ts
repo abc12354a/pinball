@@ -23,7 +23,7 @@ export function useCanvasNode(id: string): CanvasInfo | null {
         const r = res as { node: CanvasLike | null; width?: number; height?: number } | null
         if (r && r.node && r.width && r.height) {
           setInfo({ canvas: r.node, width: r.width, height: r.height })
-        } else if (attempt < 3) {
+        } else if (attempt < 10) {
           setTimeout(() => query(attempt + 1), 100)
         }
       })
@@ -34,6 +34,12 @@ export function useCanvasNode(id: string): CanvasInfo | null {
     Taro.nextTick(() => query(0))
   })
 
-  useEffect(() => () => setInfo(null), [])
+  useEffect(() => {
+    const timer = setTimeout(() => query(0), 60)
+    return () => {
+      clearTimeout(timer)
+      setInfo(null)
+    }
+  }, [])
   return info
 }

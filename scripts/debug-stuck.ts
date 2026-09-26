@@ -14,7 +14,7 @@ for (let i = 0; i < 3000; i++) {
   world.setTargetLane(-1)
   world.launch(power)
   let s = 0
-  while (world.state === 'flying' && s < 3000) {
+  while ((world.state === 'flying' || world.state === 'sinking') && s < 3000) {
     world.step(1 / 120)
     s++
   }

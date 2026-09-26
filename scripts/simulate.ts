@@ -3,7 +3,7 @@
  *
  * 验证项：
  * 1. 各档倍数命中率 / EV / 出现占比
- * 2. 总 RTP（含开心30秒的免费收益）
+ * 2. 总 RTP（基础）
  * 3. 分力度 RTP —— 无"必胜力道"（5 档全部落在 ±0.03 带宽内）
  * 4. 落道频率 vs W2 —— 采样器与概率表一致性（误差 <1%）
  * 5. 卡片模式：命中率倍率、均卡/局
@@ -29,7 +29,6 @@ for (const m of CONFIG.mult.levels) multStats.set(m, { count: 0, hits: 0, bet: 0
 
 let totalBet = 0
 let totalWin = 0
-let happyWin = 0
 let totalCards = 0
 const laneCounts = new Array(CONFIG.board.laneCount).fill(0)
 
@@ -43,7 +42,7 @@ function playRound(mode: 'ball' | 'card', band?: number): void {
   const bet = 5 * (1 + Math.floor(rng() * 4)) // 5/10/15/20 常见投注
   const mult = rollMult(rng)
   const power = band !== undefined ? (band + 0.5) / BANDS : 0.15 + rng() * 0.85
-  const lane = pickLane(rng, { mult, power, mode, happy: false })
+  const lane = pickLane(rng, { mult, power, mode })
   const settle = computeSettle(rng, bet, mult, lane, mode)
   const st = multStats.get(mult)!
   st.count++
@@ -58,46 +57,12 @@ function playRound(mode: 'ball' | 'card', band?: number): void {
     bandWin[band] += settle.winBalls
   }
   if (mode === 'ball') laneCounts[lane]++
-  return accumulateEnergy(bet, band)
-}
-
-/** 能量累积 → 满 5 盏触发开心30秒（按 6 发免费弹射估算） */
-function accumulateEnergy(bet: number, band?: number): void {
-  progress += bet
-  while (progress >= CONFIG.energy.ballsPerLamp) {
-    progress -= CONFIG.energy.ballsPerLamp
-    lamps++
-    if (lamps >= CONFIG.energy.lampCount) {
-      lamps = 0
-      progress = 0
-      playHappyBurst(band)
-      return
-    }
-  }
-}
-
-let lamps = 0
-let progress = 0
-
-/** 开心30秒：5 发免费弹射（约 6s/发），名义注结算，独立落道权重 */
-function playHappyBurst(band?: number): void {
-  const shots = 5
-  for (let i = 0; i < shots; i++) {
-    const mult = rollMult(rng)
-    const power = band !== undefined ? (band + 0.5) / BANDS : 0.15 + rng() * 0.85
-    const lane = pickLane(rng, { mult, power, mode: 'ball', happy: true })
-    const settle = computeSettle(rng, CONFIG.energy.happyNominalBet, mult, lane, 'ball')
-    totalWin += settle.winBalls
-    happyWin += settle.winBalls
-    totalCards += settle.cards
-    if (band !== undefined) bandWin[band] += settle.winBalls // 免费收益归入该档（bet 为 0）
-  }
 }
 
 // ---------- 主循环 ----------
 for (let i = 0; i < N; i++) playRound('ball')
 
-console.log(`\n═══ 弹珠模式（N=${N}，含开心30秒） ═══`)
+console.log(`\n═══ 弹珠模式（N=${N}，基础 RTP） ═══`)
 console.log('倍数 |  出现率 | 命中率 |   EV   | 局数')
 for (const m of CONFIG.mult.levels) {
   const st = multStats.get(m)!
@@ -110,13 +75,10 @@ for (const m of CONFIG.mult.levels) {
 }
 const rtp = totalWin / totalBet
 console.log(`\n总 RTP = ${rtp.toFixed(4)}（目标 ${CONFIG.targetRTP}±0.03）`)
-console.log(`开心30秒贡献 = ${happyWin / totalBet > 0 ? ((happyWin / totalWin) * 100).toFixed(1) : 0}% of wins`)
 console.log(`均卡/局 = ${(totalCards / N).toFixed(3)}`)
 
 // ---------- 分力度 ----------
 console.log(`\n═══ 分力度 RTP（防"必胜力道"） ═══`)
-lamps = 0
-progress = 0
 for (const st of multStats.values()) {
   st.count = 0; st.hits = 0; st.bet = 0; st.win = 0
 }
@@ -158,8 +120,8 @@ let cardHit = 0
 const CN = N
 for (let i = 0; i < CN; i++) {
   const mult = rollMult(rng)
-  if (isWin(pickLane(rng, { mult, power: 0.5, mode: 'ball', happy: false }), mult)) ballHit++
-  if (isWin(pickLane(rng, { mult, power: 0.5, mode: 'card', happy: false }), mult)) cardHit++
+  if (isWin(pickLane(rng, { mult, power: 0.5, mode: 'ball' }), mult)) ballHit++
+  if (isWin(pickLane(rng, { mult, power: 0.5, mode: 'card' }), mult)) cardHit++
 }
 console.log(
   ` 弹珠模式命中率 ${((ballHit / CN) * 100).toFixed(1)}% → 卡片模式 ${((cardHit / CN) * 100).toFixed(1)}%（×${(cardHit / ballHit).toFixed(2)}，配置 boost=${CONFIG.card.cardModeRateBoost}，上限 0.95 封顶）`

@@ -1,0 +1,200 @@
+.spring-plunger-widget {
+  position: absolute;
+  right: 10px;
+  bottom: 12px;
+  width: 58px;
+  height: 180px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 10;
+  user-select: none;
+  touch-action: none;
+
+  &.disabled {
+    opacity: 0.45;
+    pointer-events: none;
+    filter: grayscale(0.5);
+  }
+
+  &.active {
+    opacity: 1;
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  // LED 张力条
+  .led-gauge-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 110px;
+    margin-right: 6px;
+    margin-bottom: 50px;
+    padding: 3px;
+    background: rgba(10, 8, 18, 0.85);
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+
+    .led-segment {
+      width: 6px;
+      height: 9px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.08);
+      transition: background 0.06s ease, box-shadow 0.06s ease;
+
+      &.lit {
+        &.ok {
+          background: #00ff88;
+          box-shadow: 0 0 6px #00ff88;
+        }
+        &.warn {
+          background: #ffcc00;
+          box-shadow: 0 0 7px #ffcc00;
+        }
+        &.danger {
+          background: #ff3366;
+          box-shadow: 0 0 8px #ff3366;
+        }
+      }
+    }
+  }
+
+  // 筒身与弹簧仓
+  .plunger-chamber {
+    position: relative;
+    width: 36px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .plunger-casing {
+      position: relative;
+      width: 32px;
+      height: 140px;
+      background: linear-gradient(90deg, #1f2026, #3b3e47 25%, #595d6a 50%, #2b2c33 75%, #18191d);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7), inset 0 0 8px rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 8px;
+      overflow: visible;
+
+      // 拉杆中轴
+      .plunger-shaft {
+        position: absolute;
+        top: 10px;
+        width: 6px;
+        height: 100px;
+        background: linear-gradient(90deg, #888, #fff 40%, #ccc 70%, #555);
+        border-radius: 3px;
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+        z-index: 1;
+      }
+
+      // 3D 机械弹簧圈组（纯 View + CSS，100% 微信小程序规范）
+      .plunger-spring-chamber {
+        position: absolute;
+        top: 12px;
+        width: 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 2;
+        pointer-events: none;
+        overflow: visible;
+
+        .spring-coil-unit {
+          width: 22px;
+          height: 6px;
+          border-radius: 4px;
+          background: linear-gradient(180deg, #ffffff 0%, #c4c9d4 30%, #585c66 70%, #2b2e36 100%);
+          border: 1px solid rgba(255, 255, 255, 0.4);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+        }
+      }
+
+      // 底部拉杆手柄球
+      .plunger-knob {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        margin-left: -20px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #ff5252, #d32f2f 45%, #8b0000 85%, #4a0000);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 77, 94, 0.4);
+        border: 2px solid #ffa4a4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 5;
+        cursor: grab;
+        transform-origin: center center;
+
+        &.pulling {
+          box-shadow: 0 8px 18px rgba(255, 77, 94, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.8);
+          transform: scale(0.96);
+        }
+
+        .knob-highlight {
+          position: absolute;
+          top: 6px;
+          left: 8px;
+          width: 12px;
+          height: 7px;
+          background: rgba(255, 255, 255, 0.65);
+          border-radius: 50%;
+          transform: rotate(-25deg);
+        }
+
+        .knob-ring {
+          position: absolute;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          border: 1px dashed rgba(255, 255, 255, 0.25);
+        }
+
+        .knob-label {
+          font-size: 11px;
+          font-weight: 900;
+          color: #ffffff;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+          letter-spacing: 0.5px;
+          z-index: 2;
+        }
+      }
+    }
+  }
+
+  // 弹簧回弹瞬时震颤动画
+  &.snapping {
+    .plunger-shaft,
+    .plunger-spring-chamber,
+    .plunger-knob {
+      transition: transform 0.24s cubic-bezier(0.175, 0.885, 0.32, 1.35), height 0.24s cubic-bezier(0.175, 0.885, 0.32, 1.35);
+    }
+  }
+
+  .plunger-text-hint {
+    position: absolute;
+    bottom: -18px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #ffd76e;
+    text-shadow: 0 0 6px rgba(255, 215, 110, 0.6);
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+  }
+}

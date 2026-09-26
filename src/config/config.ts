@@ -97,49 +97,6 @@ export const CONFIG = {
     { id: 'legend', name: '锦鲤卡', type: 'legend', points: 50, redeemBalls: 0, rarity: 'SSR', weight: 2 }
   ] as CardDef[],
 
-  /** 能量条与开心30秒 */
-  energy: {
-    lampCount: 5,
-    /** 每投多少颗弹珠亮 1 盏 */
-    ballsPerLamp: 25,
-    happyDurationMs: 30_000,
-    /**
-     * 开心30秒内每次免费弹射的名义注（按此结算退珠）。
-     * 免费收益计入总 RTP：名义注×发数×EV ≈ +0.04，压在目标内（M3 模拟实测）。
-     */
-    happyNominalBet: 2,
-    /**
-     * 开心30秒独立落道权重（免费局降命中率，防总 RTP 暴涨）：
-     * 质量向 W3 少用的轨道（0/5/10/11）偏移 → 亮灯位命中率下降。
-     */
-    happyLaneWeights: [16, 6, 5, 5, 4, 14, 5, 4, 4, 6, 16, 17]
-  },
-
-  /** 机器人模拟赛事（无真联机，假玩家 + 本地排行榜） */
-  events: {
-    /** 首场赛事延迟（ms）：进场先玩主循环，稍后再被打断 */
-    firstDelayMs: 45_000,
-    /** 赛事循环周期（ms）：到点弹报名邀请 */
-    periodMs: 5 * 60 * 1000,
-    /** 报名窗口（ms） */
-    signupMs: 10_000,
-    minigames: {
-      paipai: { name: '拍拍乐', durationMs: 10_000 },   // 拼手速：限时拍打开始键
-      tug: { name: '拔河比赛', durationMs: 30_000 },     // 拼手速：对抗系统阈值
-      duel: { name: '巅峰对决', durationMs: 30_000 },    // 免费弹射比命中数
-      lucky: { name: '幸运座位', durationMs: 8_000 }     // 随机抽座位，纯随机
-    },
-    /** 假玩家数量 */
-    botCount: 8,
-    /** 名次奖励（Top3 弹珠 + 卡；参与奖） */
-    rewards: [
-      { balls: 60, cards: 3 },
-      { balls: 35, cards: 2 },
-      { balls: 20, cards: 1 }
-    ],
-    participateReward: { balls: 5, cards: 0 }
-  },
-
   /** 新玩家初始弹珠（模拟"买珠"入口前的体验额度） */
   wallet: {
     initialBalls: 100
@@ -163,8 +120,57 @@ export const CONFIG = {
     guideDamp: 5.5
   },
 
-  /** 目标综合 RTP（含开心30秒免费收益，模拟脚本校验用） */
-  targetRTP: 0.85
+  /** 特殊机关：黄金弹性蘑菇钉 */
+  bumpers: {
+    restitution: 0.75,
+    rewardBalls: 1,
+    radius: 6
+  },
+
+  /** 连击与狂热 (Fever) */
+  combo: {
+    feverThreshold: 3,
+    bonusPerCombo: 0.05
+  },
+
+  /** 每日任务与成就定义 */
+  missions: [
+    { id: 'daily_login', name: '每日报到', desc: '进入弹珠堂签到打卡', target: 1, rewardBalls: 30, rewardPoints: 5 },
+    { id: 'daily_bet', name: '小试身手', desc: '今日累计投珠 20 颗', target: 20, rewardBalls: 25, rewardPoints: 5 },
+    { id: 'daily_win', name: '百步穿杨', desc: '今日累计中奖 3 次', target: 3, rewardBalls: 40, rewardPoints: 10 }
+  ],
+
+  achievements: [
+    { id: 'first_win', name: '首开得胜', desc: '赢得任意一局弹珠奖励', target: 1, rewardBalls: 50, rewardPoints: 10 },
+    { id: 'high_roller', name: '豪掷千金', desc: '单局加注达到 50 颗封顶', target: 50, rewardBalls: 60, rewardPoints: 15 },
+    { id: 'big_jackpot', name: '超级大奖', desc: '单局中奖获得超过 100 颗弹珠', target: 100, rewardBalls: 100, rewardPoints: 30 },
+    { id: 'fever_master', name: '连胜狂徒', desc: '达成 3 连胜进入 FEVER 狂热状态', target: 3, rewardBalls: 80, rewardPoints: 25 },
+    { id: 'koi_blessing', name: '锦鲤降世', desc: '抽中最高稀有度 SSR 锦鲤卡', target: 1, rewardBalls: 200, rewardPoints: 100 }
+  ],
+
+  /** 救济金机制 */
+  rescue: {
+    minBallsTrigger: 5,
+    ballsGiven: 100,
+    dailyLimit: 3
+  },
+
+  /** 积分商城 */
+  shop: {
+    skins: [
+      { id: 'default', name: '经典银光', price: 0, color: '#a8dcff', glow: '#5aa8e8' },
+      { id: 'gold', name: '黄金彗星', price: 60, color: '#ffd76e', glow: '#ff9f43' },
+      { id: 'neon', name: '赛博霓虹', price: 120, color: '#ff6b81', glow: '#ff4d5e' },
+      { id: 'void', name: '暗夜紫晶', price: 180, color: '#d8b4fe', glow: '#a855f7' }
+    ],
+    packs: [
+      { id: 'pack_100', name: '百珠补给箱', balls: 100, costPoints: 20 },
+      { id: 'pack_300', name: '豪华弹珠包', balls: 300, costPoints: 50 }
+    ]
+  },
+
+  /** 目标基础 RTP（开心30秒删除后实测回填：0.827，模拟脚本校验用） */
+  targetRTP: 0.83
 } as const
 
 export type GameConfig = typeof CONFIG

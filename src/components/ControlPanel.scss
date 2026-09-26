@@ -1,0 +1,193 @@
+.control-panel {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 16px calc(env(safe-area-inset-bottom, 0px) + 10px);
+  background: linear-gradient(180deg, rgba(28, 18, 48, 0.95), #160f21);
+  border-top: 1px solid rgba(126, 203, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10;
+}
+
+.cp-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+
+  .phase-badge {
+    font-size: 24px;
+    font-weight: 600;
+    color: #cfc3e8;
+    background: rgba(126, 203, 255, 0.1);
+    padding: 4px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(126, 203, 255, 0.2);
+    white-space: nowrap;
+  }
+
+  .fever-badge {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffd76e;
+    background: linear-gradient(90deg, rgba(255, 107, 129, 0.3), rgba(255, 215, 110, 0.3));
+    border: 1px solid #ffd76e;
+    padding: 4px 12px;
+    border-radius: 12px;
+    animation: feverPulse 0.8s infinite alternate;
+    white-space: nowrap;
+  }
+
+  .mult-display {
+    font-size: 36px;
+    font-weight: 800;
+    color: #ffd76e;
+    text-shadow: 0 0 14px rgba(255, 215, 110, 0.6);
+  }
+}
+
+@keyframes feverPulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.05); }
+}
+
+.cp-bet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  .bet-info {
+    display: flex;
+    flex-direction: column;
+    width: 120px;
+
+    .bet-label {
+      font-size: 18px;
+      color: #9d8db8;
+    }
+
+    .bet-num {
+      font-size: 28px;
+      font-weight: 700;
+      color: #7ecbff;
+    }
+  }
+
+  .chips-group {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+  }
+
+  .chip-btn {
+    flex: 1;
+    height: 52px;
+    border-radius: 26px;
+    background: rgba(126, 203, 255, 0.12);
+    border: 1px solid rgba(126, 203, 255, 0.3);
+    color: #e8ddfa;
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+
+    &:active {
+      transform: scale(0.92);
+      background: rgba(126, 203, 255, 0.3);
+    }
+
+    &.max {
+      color: #ffd76e;
+      border-color: rgba(255, 215, 110, 0.4);
+    }
+  }
+}
+
+.cp-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .mode-switch-btn {
+    width: 170px;
+    height: 72px;
+    border-radius: 36px;
+    background: rgba(45, 28, 77, 0.8);
+    border: 1px solid rgba(147, 112, 219, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    .mode-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .mode-desc {
+      font-size: 16px;
+      color: #ffd76e;
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  .start-trigger-btn {
+    flex: 1;
+    height: 72px;
+    border-radius: 36px;
+    background: linear-gradient(135deg, #ff6b81, #ff4d5e);
+    box-shadow: 0 0 16px rgba(255, 77, 94, 0.5);
+    color: #fff;
+    font-size: 30px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 2px;
+    transition: all 0.2s;
+
+    &.pulse {
+      animation: startPulse 1s infinite alternate;
+    }
+
+    &.disabled {
+      opacity: 0.45;
+      box-shadow: none;
+      filter: grayscale(0.5);
+    }
+
+    &.fire-btn {
+      background: linear-gradient(135deg, #ffd76e, #ff9f43);
+      box-shadow: 0 0 16px rgba(255, 215, 110, 0.6);
+      color: #160f21;
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+}
+
+@keyframes startPulse {
+  from { transform: scale(1); box-shadow: 0 0 12px rgba(255, 77, 94, 0.4); }
+  to { transform: scale(1.03); box-shadow: 0 0 22px rgba(255, 77, 94, 0.8); }
+}
+
+.settle-feedback-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffd76e;
+  text-shadow: 0 0 8px rgba(255, 215, 110, 0.5);
+}

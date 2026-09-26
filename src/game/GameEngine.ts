@@ -2,25 +2,24 @@ import Taro from '@tarojs/taro'
 import { CONFIG } from '../config/config'
 import { StateMachine } from './core/stateMachine'
 import { createRng } from './core/rng'
-import type { EventReward, GameMode, Phase, RoundContext, SettleResult } from './core/types'
+import type { GameMode, Phase, RoundContext, SettleResult } from './core/types'
 import { GameLoop, type CanvasLike } from './loop'
 import { PlinkoWorld } from './physics/world'
 import { createBoard } from './render/board'
 import { Renderer } from './render/renderer'
-import { TournamentRunner, type TournamentId } from '../events/tournaments'
-import { EventScheduler } from '../events/scheduler'
+import { soundManager } from '../audio/soundManager'
 
 /**
- * GameEngine —— 粘合层：状态机 + 物理 + 渲染 + 触摸 + 赛事 + 主循环。
+ * GameEngine —— 粘合层：状态机 + 物理 + 渲染 + 触摸 + 主循环。
  *
- * React 边界约定：frame 内零 setState；对外只通过 machine 通知 + onSettle/onReward 回调。
+ * React 边界约定：frame 内零 setState；对外只通过 machine 通知 + onSettle 回调。
  */
 
 export interface EngineHooks {
-  /** 结算落地（进 SETTLE 时调用一次）：由 store 应用退珠/出卡/能量持久化 */
+  /** 结算落地（进 SETTLE 时调用一次）：由 store 应用退珠/出卡持久化 */
   onSettle?: (result: SettleResult, ctx: RoundContext) => void
-  /** 赛事奖励（EVENT_DONE 恢复快照时经 pendingReward 通道转发） */
-  onReward?: (reward: EventReward) => void
+  /** 黄金钉微奖励 */
+  onBumperReward?: (balls: number) => void
   getMode?: () => GameMode
 }
 
@@ -28,19 +27,17 @@ export interface EngineHooks {
 const CHARGE_PERIOD_MS = 1600
 const SETTLE_WIN_MS = 1500
 const SETTLE_LOSE_MS = 800
-const SETTLE_HAPPY_MS = 450
 
 export class GameEngine {
   readonly sm: StateMachine
   readonly world: PlinkoWorld
   readonly renderer: Renderer
-  readonly tournament: TournamentRunner
-  private scheduler: EventScheduler
   private rng = createRng()
   private loop: GameLoop
   private acc = 0
   private power = 0.5
   private settleDoneAt = 0
+  private lastRollTickAt = 0
   private prevPhase: Phase = 'IDLE'
   private pausedAt = 0
   private hooks: EngineHooks
@@ -54,16 +51,23 @@ export class GameEngine {
     cssHeight: number,
     hooks: EngineHooks = {}
   ) {
+    let dpr = 2
+    try {
+      dpr = Math.min((Taro as any).getWindowInfo?.()?.pixelRatio || Taro.getSystemInfoSync?.()?.pixelRatio || 2, 3)
+    } catch {
+      dpr = 2
+    }
     this.hooks = hooks
-    const dpr = Math.min(Taro.getSystemInfoSync().pixelRatio, 2)
-    const layout = createBoard()
+    // 自适应板高：保持 375 宽基准，按画布纵横比缩放高度（480~640 钳制）
+    // → scale ≈ cssW/375，棋盘宽度撑满、四周零留白
+    const targetH = Math.round((CONFIG.board.width * cssHeight) / cssWidth)
+    const layout = createBoard(targetH)
     this.world = new PlinkoWorld(layout)
     this.sm = new StateMachine({ rng: this.rng, getMode: hooks.getMode })
-    this.tournament = new TournamentRunner(this.sm, this.rng)
     const ctx2d = canvas.getContext('2d')
     this.renderer = new Renderer(ctx2d, layout, this.world, this.sm)
 
-    // 画布物理尺寸 + 逻辑坐标缩放（375×560 居中）
+    // 画布物理尺寸 + 逻辑坐标缩放（375 宽基准，按画布纵横比适配高度，居中）
     canvas.width = Math.round(cssWidth * dpr)
     canvas.height = Math.round(cssHeight * dpr)
     this.physW = canvas.width
@@ -73,26 +77,32 @@ export class GameEngine {
     const oy = (cssHeight - layout.height * scale) / 2
     ctx2d.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * ox, dpr * oy)
 
+    this.world.onPegHit = (x, y, nx, ny, depthRatio, speed) => {
+      const impactTrauma = Math.min(0.35, 0.08 + speed * 0.0003)
+      this.renderer.shake.addTrauma(impactTrauma)
+      this.renderer.particles.spark(x, y, nx, ny, 4)
+      soundManager.playBounce(depthRatio)
+    }
+
+    this.world.onBumperHit = (index) => {
+      this.sm.dispatch({ t: 'BUMPER_HIT', index })
+      const px = layout.pegs[index * 3]
+      const py = layout.pegs[index * 3 + 1]
+      this.renderer.celebrateBumper(px, py)
+      soundManager.playBumper()
+      this.hooks.onBumperReward?.(CONFIG.bumpers?.rewardBalls ?? 1)
+    }
+
     this.world.onLanded = (lane) => {
       if (this.sm.phase === 'PHYSICS') {
         this.sm.dispatch({ t: 'LANDED', lane })
-      } else if (this.sm.phase === 'ONLINE_MINIGAME') {
-        // 巅峰对决：命中亮灯道计分
-        this.tournament.onDuelLanded(lane)
       }
-      // 其余情况（赛事打断中的旧球）：只记录，恢复时 fast-forward
     }
+    // 投珠滑入：每颗到位时清脆咔哒声（与 playCoin/playFeederRoll 不叠加）
+    this.renderer.onFeederArrive = () => soundManager.playRollTick(1.2)
     this.sm.subscribe((phase, ctx) => {
-      // 赛事奖励瞬时通道（EVENT_DONE 派发期间可读）
-      if (this.sm.pendingReward) this.hooks.onReward?.(this.sm.pendingReward)
       this.onPhaseChange(phase, ctx)
     })
-    // 巅峰对决发射：直接驱动钉板（不经状态机）
-    this.tournament.onDuelLaunch = (lane, power) => {
-      this.world.setTargetLane(lane)
-      this.world.launch(power)
-    }
-    this.scheduler = new EventScheduler(Date.now())
     this.loop = new GameLoop(canvas, (dtMs) => this.frame(dtMs))
   }
 
@@ -122,26 +132,38 @@ export class GameEngine {
   // ---------- 触摸（整块画布 = 拉杆） ----------
 
   handleTouchStart(): void {
-    // 赛事期间：决斗蓄力 / 拍打类计分
-    if (this.sm.phase === 'ONLINE_MINIGAME') {
-      if (this.tournament.chargeStart()) return
-      this.tournament.tap()
-      return
-    }
-    if (this.sm.phase === 'FIRE' || this.sm.phase === 'HAPPY30S') {
+    if (this.sm.phase === 'FIRE' || this.sm.phase === 'BET_WINDOW') {
       this.sm.dispatch({ t: 'CHARGE_START' })
     }
   }
 
   handleTouchEnd(): void {
-    if (this.sm.phase === 'ONLINE_MINIGAME') {
-      this.tournament.chargeEnd(this.tournament.chargePower)
-      return
-    }
     if (this.sm.ctx.charging && this.sm.phase === 'FIRE') {
       this.power = this.chargePowerNow()
       this.sm.dispatch({ t: 'CHARGE_END', power: this.power })
     }
+  }
+
+  /** 外部直接通过拉杆力度发射（支持拟真拖拽释放与快速连发；BET_WINDOW 自动确认投注） */
+  launchWithPower(power: number): void {
+    if (this.sm.phase === 'FIRE' || this.sm.phase === 'BET_WINDOW') {
+      this.power = Math.max(0.1, Math.min(1, power))
+      soundManager.playPlungerRelease()
+      if (!this.sm.ctx.charging) {
+        this.sm.dispatch({ t: 'CHARGE_START' })
+      }
+      this.sm.dispatch({ t: 'CHARGE_END', power: this.power })
+    }
+  }
+
+  /** 触发小球入道滑入动画与音效 */
+  triggerFeeder(count = 1): void {
+    this.renderer.triggerFeederAnimation(count)
+    soundManager.playFeederRoll()
+  }
+
+  setBallSkin(color: string, glow: string): void {
+    this.renderer.ballSkin = { color, glow }
   }
 
   /** 当前蓄力值（力度条往返） */
@@ -157,15 +179,15 @@ export class GameEngine {
     const now = Date.now()
     this.sm.tick(now)
 
-    // 赛事：推进中的倒计时/结算 + 定时轮换发起新赛事
-    this.tournament.tick(now)
-    this.scheduler.tick(
-      now,
-      () =>
-        this.sm.phase !== 'EVENT_INVITE' &&
-        this.sm.phase !== 'ONLINE_MINIGAME',
-      (id: TournamentId) => this.tournament.startInvite(id, now)
-    )
+    // 倍数滚动：每 110ms 一次跳动音，音调随进度上扬（渲染层同步翻数）
+    if (this.sm.phase === 'ROLL_MULT') {
+      const total = CONFIG.mult.rollAnimMs
+      const elapsed = Math.max(0, total - Math.max(0, this.sm.ctx.rollEndTs - now))
+      if (now - this.lastRollTickAt >= 110) {
+        this.lastRollTickAt = now
+        soundManager.playRollTick(0.9 + 0.5 * Math.min(1, elapsed / total))
+      }
+    }
 
     // 结算动画时长 → 自动 SETTLE_DONE
     if (this.sm.phase === 'SETTLE' && now >= this.settleDoneAt) {
@@ -184,14 +206,7 @@ export class GameEngine {
 
     if (this.sm.ctx.charging) {
       this.renderer.chargePower = this.chargePowerNow()
-    } else if (this.tournament.isCharging) {
-      this.renderer.chargePower = this.tournament.chargePower
     }
-    // 决斗期间亮灯轨来自赛事（状态机 ctx 处于快照态）
-    this.renderer.litOverride =
-      this.sm.phase === 'ONLINE_MINIGAME' && this.tournament.getSnapshot().id === 'duel'
-        ? this.tournament.duelLitLanes
-        : null
     this.renderer.step(dtMs / 1000)
     this.renderer.draw(this.physW, this.physH)
   }
@@ -205,13 +220,16 @@ export class GameEngine {
     this.prevPhase = phase
     if (!changed) return
 
+    if (phase === 'ROLL_MULT') {
+      this.lastRollTickAt = 0
+    }
+
+    if (phase === 'BET_WINDOW' && prev === 'ROLL_MULT') {
+      soundManager.playRollTick(1.8) // 锁定咔哒
+    }
+
     if (phase === 'PHYSICS') {
-      // 赛事恢复：球已落道 → fast-forward 结算；否则继续飞
-      if (this.world.state === 'flying') return
-      if (this.world.state === 'landed') {
-        this.sm.dispatch({ t: 'LANDED', lane: this.world.landedLane })
-        return
-      }
+      soundManager.playLaunch()
       this.world.setTargetLane(ctx.targetLane)
       this.world.launch(this.power)
       return
@@ -220,20 +238,15 @@ export class GameEngine {
     if (phase === 'SETTLE') {
       const r = ctx.lastSettle
       if (r && r.isWin) {
-        this.renderer.celebrate(ctx.targetLane)
-        // 中奖震动反馈（接口不可用时静默）
-        try {
-          Taro.vibrateShort({ type: 'medium' })
-        } catch {
-          // ignore
+        this.renderer.celebrate(ctx.targetLane, r.winBalls)
+        soundManager.playWin()
+        if (r.winBalls > 0) {
+          soundManager.playPayoutStream(Math.min(12, Math.max(3, Math.floor(r.winBalls / 5))))
         }
+        if (ctx.feverActive) soundManager.playFever()
       }
       if (this.hooks.onSettle && r) this.hooks.onSettle(r, ctx)
-      const dur = ctx.happy.active
-        ? SETTLE_HAPPY_MS
-        : r && r.isWin
-          ? SETTLE_WIN_MS
-          : SETTLE_LOSE_MS
+      const dur = r && r.isWin ? SETTLE_WIN_MS : SETTLE_LOSE_MS
       this.settleDoneAt = Date.now() + dur
       return
     }

@@ -1,4 +1,4 @@
-/** 游戏阶段（规格书 8(1) 状态机 + HAPPY30S 扩展） */
+/** 游戏阶段（规格书 8(1) 状态机） */
 export type Phase =
   | 'IDLE' // 待机/投珠
   | 'READY' // ≥5 珠，可按开始
@@ -7,10 +7,7 @@ export type Phase =
   | 'FIRE' // 拉杆蓄力/发射
   | 'PHYSICS' // 钉板滚动（表现层，落点已定）
   | 'SETTLE' // 落道判定 → 退珠/出卡结算动画
-  | 'BONUS_CHECK' // 能量判定：满灯 → 开心30秒
-  | 'HAPPY30S' // 开心30秒：免费弹射子循环的待发射态
-  | 'EVENT_INVITE' // 联机（机器人）赛事报名弹窗
-  | 'ONLINE_MINIGAME' // 赛事进行中
+  | 'BONUS_CHECK' // 结算后的瞬时过渡
 
 /** 产出模式：弹珠（退珠）⇄ 卡片（直接抽卡） */
 export type GameMode = 'ball' | 'card'
@@ -23,12 +20,6 @@ export interface SettleResult {
   cards: number
   /** 卡片模式抽到的卡面 ID 列表 */
   cardIds: string[]
-}
-
-export interface HappyState {
-  active: boolean
-  /** 结束时间戳（ms），inactive 时为 0 */
-  endTime: number
 }
 
 /** 一局上下文（机器内当前投注/倍数/亮灯/落点等） */
@@ -44,11 +35,6 @@ export interface RoundContext {
   isWin: boolean
   /** 本局使用的模式（按开始时锁定） */
   mode: GameMode
-  /** 开心30秒状态 */
-  happy: HappyState
-  /** 能量：已亮灯数 + 当前盏内进度（颗） */
-  energyLamps: number
-  energyProgress: number
   /** 蓄力子状态 */
   charging: boolean
   chargeStartTs: number
@@ -57,21 +43,16 @@ export interface RoundContext {
   windowEndTs: number
   physicsStartTs: number
   settleStartTs: number
-  /** 赛事邀请 */
-  invite: { eventId: string; endTs: number; joined: boolean } | null
-  /** 赛事打断时的快照（phase + ctx 浅拷贝），EVENT_DONE 后恢复 */
-  snapshot: { phase: Phase; ctx: RoundContext } | null
   /** 最近一次结算结果 */
   lastSettle: SettleResult | null
+  /** 连击数（连续中奖） */
+  comboCount: number
+  /** 狂热模式（连续 3 次中奖触发） */
+  feverActive: boolean
+  /** 本局黄金钉撞击次数 */
+  bumperHits: number
   /** 局序号（每按一次开始 +1） */
   roundSeq: number
-}
-
-export interface EventReward {
-  balls: number
-  cards: number
-  rank: number
-  eventName: string
 }
 
 export type GameEvent =
@@ -85,15 +66,9 @@ export type GameEvent =
   | { t: 'CHARGE_START' }
   /** 松手，power ∈ [0,1]；此刻抽出落点 */
   | { t: 'CHARGE_END'; power: number }
+  /** 撞击黄金弹性钉 */
+  | { t: 'BUMPER_HIT'; index: number }
   /** 母球落道（lane 必须等于 targetLane） */
   | { t: 'LANDED'; lane: number }
   /** 结算动画完成 */
   | { t: 'SETTLE_DONE' }
-  /** 赛事邀请（eventId 对应 events.minigames 配置） */
-  | { t: 'INVITE'; eventId: string }
-  /** 玩家点击报名 */
-  | { t: 'JOIN' }
-  /** 赛事结束（发奖由引擎侧监听 applyReward 完成） */
-  | { t: 'EVENT_DONE'; reward?: EventReward }
-  /** 开心30秒到时（tick 触发） */
-  | { t: 'HAPPY_TIMEOUT' }

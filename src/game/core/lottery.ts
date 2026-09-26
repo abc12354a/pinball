@@ -44,14 +44,12 @@ export interface PickLaneOpts {
   /** 蓄力力度 [0,1]：满力偏中心、弱力偏边缘（对称小幅） */
   power: number
   mode: GameMode
-  /** 开心30秒内使用独立 happyLaneWeights */
-  happy: boolean
 }
 
 /**
  * 落道抽取 —— 在松手（CHARGE_END）瞬间调用，结果写入 ctx.targetLane。
  *
- * 权重合成：基础表（W2 / happyLaneWeights）× 蓄力偏移（中心权重 ×(1 + powerBiasMax·(2·power-1))，对称小幅 ≤12%）
+ * 权重合成：基础表（W2）× 蓄力偏移（中心权重 ×(1 + powerBiasMax·(2·power-1))，对称小幅 ≤12%）
  * 卡片模式增益用分组混合实现：命中率精确 ×boost（亮灯权重直接相乘是边际递减的，
  * 达不到规格书"得中率高 2-6 倍"），组内仍按相对权重分布，保证视觉落点一致。
  */
@@ -60,7 +58,7 @@ export function pickLane(
   opts: PickLaneOpts,
   cfg: typeof CONFIG = CONFIG
 ): number {
-  const base = opts.happy ? cfg.energy.happyLaneWeights : cfg.lanes.weights
+  const base = cfg.lanes.weights
   const n = base.length
   const lit = litLanesOf(opts.mult, cfg)
   const bias = cfg.lanes.powerBiasMax * (2 * opts.power - 1)
@@ -114,7 +112,6 @@ function offTotalOf(weights: number[], lit: number[]): number {
  * 结算（规格书第三、五节）：
  * - 弹珠模式：winBalls = bet × mult（未中 0）；出卡 = min(floor(winBalls/30), 5)
  * - 卡片模式：命中不退珠，按卡池权重抽 1..maxDraw 张
- * - 开心30秒：bet 由调用方传入名义注，结算规则同弹珠模式
  */
 export function computeSettle(
   rng: RNG,

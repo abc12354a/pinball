@@ -144,154 +144,21 @@ describe('一局核心流程', () => {
     sm.dispatch({ t: 'INSERT', n: 40 })
     expect(sm.ctx.betTotal).toBe(CONFIG.bet.max)
   })
-})
 
-describe('能量与开心30秒', () => {
-  it('投珠累积能量：30颗（默认每盏25）→ 1盏余5', () => {
-    const { sm, clock } = makeMachine()
-    playRound(sm, clock, 15)
-    expect(sm.ctx.energyLamps).toBe(0)
-    expect(sm.ctx.energyProgress).toBe(15)
-    playRound(sm, clock, 15)
-    expect(sm.ctx.energyLamps).toBe(1)
-    expect(sm.ctx.energyProgress).toBe(5)
-  })
-
-  it('能量满 → BONUS_CHECK 自动进入开心30秒，免费弹射按名义注结算', () => {
-    const { sm, clock } = makeMachine()
-    // 快速攒满能量：直接种状态（单元测试白盒）
-    sm.ctx.energyLamps = CONFIG.energy.lampCount - 1
-    sm.ctx.energyProgress = CONFIG.energy.ballsPerLamp - 5
-    playRound(sm, clock, 5) // +5 进度 → 满 5 盏 → BONUS_CHECK 触发
-    expect(sm.ctx.happy.active).toBe(true)
-    expect(sm.phase).toBe('ROLL_MULT') // 短动画后进入免费循环
-    expect(sm.ctx.betTotal).toBe(0) // 免费局无投注
-
-    // 推进动画 → HAPPY30S 待发射态（无加注窗口）
-    clock.t += 500
-    sm.tick()
-    expect(sm.phase).toBe('HAPPY30S')
-
-    // 免费弹射一轮：中 8× 应按名义注 5 结算 → 40 珠
-    sm.dispatch({ t: 'CHARGE_START' })
-    sm.dispatch({ t: 'CHARGE_END', power: 0.5 })
-    sm.dispatch({ t: 'LANDED', lane: sm.ctx.targetLane })
-    if (sm.ctx.lastSettle && sm.ctx.lastSettle.isWin) {
-      // 名义注 2：winBalls ∈ {4,8,12,16,20}
-      expect([4, 8, 12, 16, 20]).toContain(sm.ctx.lastSettle.winBalls)
-    } else {
-      expect(sm.ctx.lastSettle).toEqual({ isWin: false, winBalls: 0, cards: 0, cardIds: [] })
-    }
-    sm.dispatch({ t: 'SETTLE_DONE' })
-    // 时间未到 → 继续下一发
-    expect(sm.phase).toBe('ROLL_MULT')
-  })
-
-  it('开心30秒到时（HAPPY30S 待发射态 tick）→ 清能量回 IDLE', () => {
-    const { sm, clock } = makeMachine()
-    sm.ctx.energyLamps = CONFIG.energy.lampCount
-    playRound(sm, clock, 5)
-    expect(sm.ctx.happy.active).toBe(true)
-    // 打完免费局回到 ROLL_MULT，推进到 HAPPY30S 待发射态
-    clock.t += 500
-    sm.tick()
-    expect(sm.phase).toBe('HAPPY30S')
-    sm.dispatch({ t: 'CHARGE_START' })
-    sm.dispatch({ t: 'CHARGE_END', power: 0.5 })
-    sm.dispatch({ t: 'LANDED', lane: sm.ctx.targetLane })
-    sm.dispatch({ t: 'SETTLE_DONE' })
-    clock.t += 500
-    sm.tick()
-    expect(sm.phase).toBe('HAPPY30S')
-    clock.t += CONFIG.energy.happyDurationMs // 到时
-    sm.tick()
-    expect(sm.phase).toBe('IDLE')
-    expect(sm.ctx.happy.active).toBe(false)
-    expect(sm.ctx.energyLamps).toBe(0)
-  })
-
-  it('免费局不计能量', () => {
-    const { sm, clock } = makeMachine()
-    sm.ctx.energyLamps = CONFIG.energy.lampCount
-    playRound(sm, clock, 5)
-    // happy 中打一发
-    clock.t += 500
-    sm.tick()
-    sm.dispatch({ t: 'CHARGE_START' })
-    sm.dispatch({ t: 'CHARGE_END', power: 0.5 })
-    sm.dispatch({ t: 'LANDED', lane: sm.ctx.targetLane })
-    sm.dispatch({ t: 'SETTLE_DONE' })
-    expect(sm.ctx.energyLamps).toBe(0)
-    expect(sm.ctx.energyProgress).toBe(0)
-  })
-})
-
-describe('赛事打断与恢复', () => {
-  it('INVITE 打断 BET_WINDOW → 未报名 → 恢复原状态', () => {
+  it('BET_WINDOW 中直接拉杆：自动确认 → FIRE 蓄力 → 发射', () => {
     const { sm, clock } = makeMachine()
     sm.dispatch({ t: 'INSERT', n: 5 })
     sm.dispatch({ t: 'CONFIRM_BET' })
     clock.t += CONFIG.mult.rollAnimMs + 1
     sm.tick()
     expect(sm.phase).toBe('BET_WINDOW')
-    const betBefore = sm.ctx.betTotal
-    const multBefore = sm.ctx.mult
 
-    sm.dispatch({ t: 'INVITE', eventId: 'paipai' })
-    expect(sm.phase).toBe('EVENT_INVITE')
+    sm.dispatch({ t: 'CHARGE_START' }) // 不等窗口超时直接蓄力
+    expect(sm.phase).toBe('FIRE')
+    expect(sm.ctx.charging).toBe(true)
+    expect(sm.ctx.betTotal).toBe(5) // 投注保留
 
-    clock.t += CONFIG.events.signupMs + 1
-    sm.tick()
-    expect(sm.phase).toBe('BET_WINDOW') // 快照恢复
-    expect(sm.ctx.betTotal).toBe(betBefore)
-    expect(sm.ctx.mult).toBe(multBefore)
-    expect(sm.ctx.invite).toBeNull()
-  })
-
-  it('JOIN 后进入 ONLINE_MINIGAME，EVENT_DONE 恢复', () => {
-    const { sm, clock } = makeMachine()
-    sm.dispatch({ t: 'INSERT', n: 5 })
-    sm.dispatch({ t: 'CONFIRM_BET' })
-    clock.t += CONFIG.mult.rollAnimMs + 1
-    sm.tick()
-
-    sm.dispatch({ t: 'INVITE', eventId: 'tug' })
-    sm.dispatch({ t: 'JOIN' })
-    expect(sm.ctx.invite && sm.ctx.invite.joined).toBe(true)
-
-    clock.t += CONFIG.events.signupMs + 1
-    sm.tick()
-    expect(sm.phase).toBe('ONLINE_MINIGAME')
-
-    let rewarded = false
-    const off = sm.subscribe(() => {
-      if (sm.pendingReward) rewarded = true
-    })
-    sm.dispatch({ t: 'EVENT_DONE', reward: { balls: 60, cards: 3, rank: 1, eventName: '拔河比赛' } })
-    expect(sm.phase).toBe('BET_WINDOW')
-    expect(rewarded).toBe(true)
-    off()
-  })
-
-  it('PHYSICS 中被打断：恢复到 PHYSICS，引擎可再 dispatch LANDED', () => {
-    const { sm, clock } = makeMachine()
-    sm.dispatch({ t: 'INSERT', n: 5 })
-    sm.dispatch({ t: 'CONFIRM_BET' })
-    clock.t += CONFIG.mult.rollAnimMs + 1
-    sm.tick()
-    clock.t += CONFIG.bet.windowMs + 1
-    sm.tick()
-    sm.dispatch({ t: 'CHARGE_START' })
-    sm.dispatch({ t: 'CHARGE_END', power: 0.5 })
+    sm.dispatch({ t: 'CHARGE_END', power: 0.6 })
     expect(sm.phase).toBe('PHYSICS')
-    const target = sm.ctx.targetLane
-
-    sm.dispatch({ t: 'INVITE', eventId: 'lucky' })
-    clock.t += CONFIG.events.signupMs + 1
-    sm.tick() // 未报名 → 直接恢复
-    expect(sm.phase).toBe('PHYSICS')
-    expect(sm.ctx.targetLane).toBe(target)
-    sm.dispatch({ t: 'LANDED', lane: target }) // 引擎 fast-forward
-    expect(sm.phase).toBe('SETTLE')
   })
 })

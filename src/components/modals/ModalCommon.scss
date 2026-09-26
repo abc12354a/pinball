@@ -1,0 +1,134 @@
+.arcade-modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 6, 20, 0.82);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  box-sizing: border-box;
+  padding: 24px;
+}
+
+.arcade-modal-card {
+  width: 670px;
+  max-width: 92vw;
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 28px;
+  background: linear-gradient(160deg, #251642, #180f2b);
+  border: 1px solid rgba(126, 203, 255, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(126, 203, 255, 0.15);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid rgba(126, 203, 255, 0.12);
+
+  .modal-title {
+    font-size: 34px;
+    font-weight: 800;
+    color: #ffd76e;
+    text-shadow: 0 0 10px rgba(255, 215, 110, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .modal-close-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 26px;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: #a497be;
+    line-height: 1;
+
+    &:active {
+      background: rgba(255, 77, 94, 0.3);
+      color: #fff;
+    }
+  }
+}
+
+.modal-tabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 6px;
+  gap: 8px;
+  border-bottom: 1px solid rgba(126, 203, 255, 0.1);
+
+  .modal-tab-item {
+    flex: 1;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #8f82a6;
+    transition: all 0.2s;
+
+    &.active {
+      background: linear-gradient(135deg, rgba(126, 203, 255, 0.25), rgba(126, 203, 255, 0.1));
+      color: #ffd76e;
+      border: 1px solid rgba(255, 215, 110, 0.3);
+    }
+  }
+}
+
+.modal-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+
+.modal-footer {
+  padding: 16px 28px 24px;
+  border-top: 1px solid rgba(126, 203, 255, 0.1);
+  display: flex;
+  gap: 14px;
+
+  .modal-btn {
+    flex: 1;
+    height: 76px;
+    border-radius: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: 700;
+    color: #e8ddfa;
+    background: rgba(126, 203, 255, 0.12);
+    border: 1px solid rgba(126, 203, 255, 0.3);
+
+    &.primary {
+      background: linear-gradient(135deg, #ff6b81, #ff4d5e);
+      border-color: transparent;
+      color: #fff;
+    }
+
+    &.gold {
+      background: linear-gradient(135deg, #ffd76e, #ff9f43);
+      border-color: transparent;
+      color: #160f21;
+    }
+
+    &.disabled {
+      opacity: 0.45;
+      filter: grayscale(0.5);
+    }
+  }
+}

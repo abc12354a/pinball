@@ -1,0 +1,105 @@
+@use './ModalCommon.scss';
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.setting-row {
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(126, 203, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .sr-label {
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .toggle-switch {
+    width: 90px;
+    height: 50px;
+    border-radius: 25px;
+    background: #3a2b55;
+    position: relative;
+    transition: all 0.25s;
+
+    .toggle-knob {
+      width: 42px;
+      height: 42px;
+      border-radius: 21px;
+      background: #fff;
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      transition: all 0.25s;
+    }
+
+    &.on {
+      background: #ff6b81;
+
+      .toggle-knob {
+        left: 44px;
+      }
+    }
+  }
+}
+
+.guide-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.guide-block {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 6px solid #7ecbff;
+
+  .gb-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: #ffd76e;
+    margin-bottom: 8px;
+  }
+
+  .gb-text {
+    font-size: 22px;
+    color: #cfc3e8;
+    line-height: 1.5;
+  }
+}
+
+.paytable-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+
+  .pt-col {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 10px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .pt-mult {
+      font-size: 24px;
+      font-weight: 800;
+      color: #ffd76e;
+    }
+
+    .pt-lights {
+      font-size: 18px;
+      color: #7ecbff;
+      margin-top: 4px;
+    }
+  }
+}

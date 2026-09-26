@@ -1,4 +1,4 @@
-import { PlinkoWorld } from '../world'
+import { PlinkoWorld, SINK_DEPTH } from '../world'
 import { createBoard } from '../../render/board'
 
 const layout = createBoard()
@@ -10,7 +10,7 @@ describe('PlinkoWorld 物理', () => {
       world.setTargetLane(-1)
       world.launch(0.15 + Math.random() * 0.85)
       let s = 0
-      while (world.state === 'flying' && s < 3000) {
+      while ((world.state === 'flying' || world.state === 'sinking') && s < 3000) {
         world.step(1 / 120)
         s++
       }
@@ -27,13 +27,34 @@ describe('PlinkoWorld 物理', () => {
       world.setTargetLane(target)
       world.launch(0.15 + Math.random() * 0.85)
       let s = 0
-      while (world.state === 'flying' && s < 3000) {
+      while ((world.state === 'flying' || world.state === 'sinking') && s < 3000) {
         world.step(1 / 120)
         s++
       }
       expect(world.state).toBe('landed')
       expect(world.landedLane).toBe(target)
     }
+  })
+
+  it('落道经过沉入口袋：先 sinking 再 landed，轨道不变', () => {
+    const world = new PlinkoWorld(layout)
+    let sawSinking = false
+    world.onLanded = (lane) => {
+      expect(lane).toBe(5)
+      expect(world.state).toBe('landed')
+    }
+    world.setTargetLane(5)
+    world.launch(0.5)
+    let s = 0
+    while ((world.state === 'flying' || world.state === 'sinking') && s < 3000) {
+      world.step(1 / 120)
+      if (world.state === 'sinking') sawSinking = true
+      s++
+    }
+    expect(sawSinking).toBe(true)
+    expect(world.state).toBe('landed')
+    expect(world.landedLane).toBe(5)
+    expect(world.by).toBe(layout.lanes.landY + SINK_DEPTH)
   })
 
   it('reset 后回到 idle 且无残留目标', () => {
@@ -44,4 +65,25 @@ describe('PlinkoWorld 物理', () => {
     expect(world.state).toBe('idle')
     expect(world.target).toBe(-1)
   })
+
+  // 自适应高度（V2 棋盘撑满）：钳制两端高度下引导仍必须收敛到目标轨
+  for (const h of [480, 640]) {
+    it(`自适应高度 h=${h}：引导落点始终等于目标轨道`, () => {
+      const adaptive = createBoard(h)
+      expect(adaptive.height).toBe(h)
+      const world = new PlinkoWorld(adaptive)
+      for (let i = 0; i < 200; i++) {
+        const target = i % 12
+        world.setTargetLane(target)
+        world.launch(0.15 + Math.random() * 0.85)
+        let s = 0
+        while ((world.state === 'flying' || world.state === 'sinking') && s < 3000) {
+          world.step(1 / 120)
+          s++
+        }
+        expect(world.state).toBe('landed')
+        expect(world.landedLane).toBe(target)
+      }
+    })
+  }
 })

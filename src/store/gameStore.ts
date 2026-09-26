@@ -1,8 +1,19 @@
 import { useSyncExternalStore } from 'react'
 import { CONFIG } from '../config/config'
 import type { StateMachine } from '../game/core/stateMachine'
-import type { EventReward, RoundContext, SettleResult } from '../game/core/types'
-import { applyReward, applySettle, createPlayer, redeemSustain, type PlayerState } from './wallet'
+import type { RoundContext, SettleResult } from '../game/core/types'
+import {
+  applySettle,
+  buyBallPack,
+  buySkin,
+  claimAchievement,
+  claimMission,
+  claimRescue,
+  createPlayer,
+  equipSkin,
+  redeemSustain,
+  type PlayerState
+} from './wallet'
 import { loadPlayer, savePlayer } from './persist'
 
 /**
@@ -27,16 +38,12 @@ export class GameStore {
     this.snap = { version: 0, player: this.player }
   }
 
-  /** 绑定状态机（页面挂载时）：恢复能量镜像并订阅变化 */
+  /** 绑定状态机（页面挂载时）：insert/toggleMode 需要读写机器 */
   attach(sm: StateMachine): () => void {
     this.sm = sm
-    sm.ctx.energyLamps = this.player.energyLamps
-    sm.ctx.energyProgress = this.player.energyProgress
-    return sm.subscribe((_phase, ctx) => {
-      this.player.energyLamps = ctx.energyLamps
-      this.player.energyProgress = ctx.energyProgress
-      this.commit()
-    })
+    return () => {
+      if (this.sm === sm) this.sm = null
+    }
   }
 
   /** 引擎 onSettle 回调 */
@@ -45,9 +52,9 @@ export class GameStore {
     this.commit()
   }
 
-  /** 赛事奖励（引擎 pendingReward 通道） */
-  handleReward = (reward: EventReward): void => {
-    applyReward(this.player, reward)
+  /** 黄金钉微奖励 */
+  handleBumperReward = (balls: number): void => {
+    this.player.balls += balls
     this.commit()
   }
 
@@ -79,6 +86,48 @@ export class GameStore {
     return ok
   }
 
+  /** 领取每日任务 */
+  claimMission(id: string): boolean {
+    const ok = claimMission(this.player, id)
+    if (ok) this.commit()
+    return ok
+  }
+
+  /** 领取成就 */
+  claimAchievement(id: string): boolean {
+    const ok = claimAchievement(this.player, id)
+    if (ok) this.commit()
+    return ok
+  }
+
+  /** 领取低保救济金 */
+  claimRescue(): boolean {
+    const ok = claimRescue(this.player)
+    if (ok) this.commit()
+    return ok
+  }
+
+  /** 购买母球皮肤 */
+  buySkin(skinId: string): boolean {
+    const ok = buySkin(this.player, skinId)
+    if (ok) this.commit()
+    return ok
+  }
+
+  /** 装配母球皮肤 */
+  equipSkin(skinId: string): boolean {
+    const ok = equipSkin(this.player, skinId)
+    if (ok) this.commit()
+    return ok
+  }
+
+  /** 积分购买弹珠包 */
+  buyBallPack(packId: string): boolean {
+    const ok = buyBallPack(this.player, packId)
+    if (ok) this.commit()
+    return ok
+  }
+
   /** 补珠（模拟"买珠"入口：自娱版免费补给） */
   refill(n = 100): void {
     this.player.balls += n
@@ -88,10 +137,6 @@ export class GameStore {
   /** 重置存档（调试入口） */
   reset(): void {
     this.player = createPlayer()
-    if (this.sm) {
-      this.sm.ctx.energyLamps = 0
-      this.sm.ctx.energyProgress = 0
-    }
     this.commit()
   }
 

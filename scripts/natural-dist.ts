@@ -25,7 +25,7 @@ for (let i = 0; i < N; i++) {
   world.setTargetLane(-1) // 无引导 = 自然模式
   world.launch(power)
   let s = 0
-  while (world.state === 'flying' && s < 5000) {
+  while ((world.state === 'flying' || world.state === 'sinking') && s < 5000) {
     world.step(1 / 120)
     s++
   }
