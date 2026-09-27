@@ -14,6 +14,7 @@ import CardRevealModal from '../../components/modals/CardRevealModal'
 import SpringPlunger from '../../components/SpringPlunger'
 import { CONFIG } from '../../config/config'
 import { soundManager } from '../../audio/soundManager'
+import { markTouch, mouseProps } from '../../utils/pointer'
 import './index.scss'
 
 export default function GamePage() {
@@ -110,9 +111,19 @@ export default function GamePage() {
           type="2d"
           id="gameCanvas"
           className="board-canvas"
-          disableScroll
-          onTouchStart={() => engineRef.current?.handleTouchStart()}
-          onTouchEnd={() => engineRef.current?.handleTouchEnd()}
+          disableScroll={process.env.TARO_ENV !== 'h5'}
+          onTouchStart={() => {
+            markTouch()
+            engineRef.current?.handleTouchStart()
+          }}
+          onTouchEnd={() => {
+            markTouch()
+            engineRef.current?.handleTouchEnd()
+          }}
+          {...mouseProps({
+            down: () => engineRef.current?.handleTouchStart(),
+            up: () => engineRef.current?.handleTouchEnd()
+          })}
         />
         <SpringPlunger
           active={sm?.phase === 'FIRE' || sm?.phase === 'BET_WINDOW'}

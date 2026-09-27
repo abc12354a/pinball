@@ -15,7 +15,9 @@ export default defineConfig(async (merge) => {
       828: 1.81 / 2
     },
     sourceRoot: 'src',
-    outputRoot: 'dist',
+    // 双端分流：小程序产物保持 dist/（project.config.json miniprogramRoot 指向它），
+    // H5 产物输出 dist/web（GitHub Pages 发布源）
+    outputRoot: process.env.TARO_ENV === 'h5' ? 'dist/web' : 'dist',
     plugins: [],
     framework: 'react',
     compiler: {

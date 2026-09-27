@@ -26,13 +26,22 @@
 ## 常用命令
 
 ```bash
-npm run dev:weapp   # 开发构建（watch），产物在 dist/
-npm run test        # jest 单元测试（状态机/结算/物理/赛事）
+npm run dev:weapp   # 小程序开发构建（watch），产物在 dist/
+npm run build:weapp # 小程序生产构建
+npm run dev:h5      # 网页版本地调试（watch + dev server）
+npm run build:h5    # 网页版生产构建，产物在 dist/web/
+npm run test        # jest 单元测试（状态机/结算/物理）
 npm run sim         # 蒙特卡洛 RTP 验证（10万局）
 npm run dist        # 无引导自然落道分布测量（3000球）
 ```
 
 开发流程：`npm run dev:weapp` → 微信开发者工具导入项目根目录 → 模拟器/真机预览。
+
+## 网页版（H5）
+
+- 同一套代码编译为网页版：`npm run dev:h5` 后浏览器打开本地 dev server，鼠标与触摸均可操作
+- 推送 `main` 分支后，GitHub Actions（`.github/workflows/deploy-web.yml`）自动构建并发布到
+  **https://abc12354a.github.io/pinball/**（hash 路由，子路径 `/pinball/` 由 `config/prod.ts` 配置）
 
 ## 目录结构
 

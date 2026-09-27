@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { soundManager } from '../audio/soundManager'
+import { eventPoint, markTouch, mouseProps } from '../utils/pointer'
 import './SpringPlunger.scss'
 
 export interface SpringPlungerProps {
@@ -25,9 +26,10 @@ export default function SpringPlunger({ active, onLaunch }: SpringPlungerProps) 
   const handleTouchStart = useCallback(
     (e: any) => {
       if (!active) return
-      const touch = e.touches?.[0]
-      if (!touch) return
-      startYRef.current = touch.clientY
+      markTouch()
+      const point = eventPoint(e)
+      if (!point) return
+      startYRef.current = point.clientY
       lastRatchetRef.current = 0
       setIsPulling(true)
       setIsSnapping(false)
@@ -38,9 +40,9 @@ export default function SpringPlunger({ active, onLaunch }: SpringPlungerProps) 
   const handleTouchMove = useCallback(
     (e: any) => {
       if (!active || !isPulling) return
-      const touch = e.touches?.[0]
-      if (!touch) return
-      const dy = Math.max(0, Math.min(MAX_DRAG_PX, touch.clientY - startYRef.current))
+      const point = eventPoint(e)
+      if (!point) return
+      const dy = Math.max(0, Math.min(MAX_DRAG_PX, point.clientY - startYRef.current))
       setPullDist(dy)
 
       // 棘轮齿顿挫感与音效
@@ -59,6 +61,7 @@ export default function SpringPlunger({ active, onLaunch }: SpringPlungerProps) 
 
   const handleTouchEnd = useCallback(() => {
     if (!active || !isPulling) return
+    markTouch()
     setIsPulling(false)
 
     const finalPower = Math.min(1, pullDist / MAX_DRAG_PX)
@@ -92,6 +95,7 @@ export default function SpringPlunger({ active, onLaunch }: SpringPlungerProps) 
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
+      {...mouseProps({ down: handleTouchStart, move: handleTouchMove, up: handleTouchEnd })}
     >
       {/* 刻度张力指示灯 (8 段 LED) */}
       <View className="led-gauge-column">

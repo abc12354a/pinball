@@ -3,3 +3,11 @@ page {
   color: #f5eee2;
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 }
+
+/* H5 兜底：浏览器 body 默认 margin 会破坏全屏布局 */
+body {
+  margin: 0;
+  background: #160f21;
+  color: #f5eee2;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+}
